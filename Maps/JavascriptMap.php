@@ -117,19 +117,25 @@ class JavascriptMap extends AbstractMap
 
     public function getMarkersInfowindowJavascript()
     {
-        $content = '';
+        $content = array();
+        $listeners = '';
         if ($this->hasMarkers())
         {
+            $index = 0;
             foreach ($this->getMarkers() as $marker)
             {
                 $meta = $marker->getMeta();
                 if (isset($meta['infowindow']))
                 {
-
+                    $content[] = sprintf('new google.maps.InfoWindow({ content: "%s" }) ', $meta['infowindow']);
+                    $listeners .= sprintf('google.maps.event.addListener(markers[%s], "click", function() { if (currentWindow) currentWindow.close(); infowindows[%s].open(map,markers[%s]); currentWindow = infowindows[%s]; }); '."\n", $index, $index, $index, $index);
                 }
+                $index++;
             }
         }
-        return $content;
+        $infowindows = sprintf('var infowindows = [%s]; ', implode($content, ','));
+        //echo "\n\n\n\n\n\n\n\n\n\n\n\n".$infowindows; die;
+        return $infowindows ."\n" . $listeners;
     }
 
     public function render()
@@ -142,14 +148,48 @@ class JavascriptMap extends AbstractMap
         $content .= sprintf('<div id="%s"></div>', $this->getId());
         $content .= '<script type="text/javascript">';
         $content .= sprintf('var markers = [%s]; ', $this->getMarkersJavascript());
+        $content .= sprintf('var positions = [%s]; ', $this->getMarkersJavascript());
         $content .= sprintf('var options = { %s }; ', $this->getOptionsJavascript());
         $content .= sprintf('var map = new google.maps.Map(document.getElementById("%s"), options); ', $this->getId());
         $content .= 'for (index in markers) { ';
         $content .= 'markers[index] = new google.maps.Marker({ position: markers[index], map: map, title: "x"});';
         $content .= "} \n";
-        $content .= sprintf('var infowindows = [%s]; ', $this->getMarkersInfowindowJavascript());
-        $content .= '</script>';
+        $content .= 'var currentWindow; ';
+        $content .= $this->getMarkersInfowindowJavascript();
+        $content .= ' var bounds = new google.maps.LatLngBounds(); ';
+        $content .= " for (var i = 0, LtLgLen = markers.length; i < LtLgLen; i++) {  \n";
+        $content .= " bounds.extend(positions[i]); \n";
+        $content .= " }; map.fitBounds(bounds); \n";
+        $content .= '
+var markerx;
+            google.maps.event.addListener(map, "click", function(event) {
+                console.log("Location: "+event.latLng);
 
+                if (markerx) {
+                    markerx.setMap(null);
+                    markerx = null;
+                }
+                markerx = createMarker(event.latLng, "name", "<b>Location</b><br>"+event.latLng);
+
+            });
+
+function createMarker(latlng, name, html) {
+    var contentString = html;
+    var marker = new google.maps.Marker({
+        position: latlng,
+        map: map,
+        zIndex: Math.round(latlng.lat()*-100000)<<5
+        });
+
+    google.maps.event.addListener(marker, "click", function() {
+        //infowindow.setContent(contentString); 
+        //infowindow.open(map,marker);
+        });
+    google.maps.event.trigger(marker, "click");    
+    return marker;
+}';
+
+        $content .= '</script>';
         return $content;
     }
 
