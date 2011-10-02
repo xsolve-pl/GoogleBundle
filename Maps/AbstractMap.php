@@ -10,6 +10,30 @@ abstract class AbstractMap implements MapInterface
 	protected $markers = array();
 	protected $meta = array();
 
+    protected $sensor = false;
+    protected $zoom = 1;
+
+    public function setSensor($sensor)
+    {
+        $this->sensor = (bool) $sensor;
+    }
+
+    public function getSensor()
+    {
+        return $this->sensor;
+    }
+
+    public function setZoom($zoom)
+    {
+        $this->zoom = $zoom;
+    }
+
+    public function getZoom()
+    {
+        return $this->zoom;
+    }
+
+
     public function setId($id)
     {
 		$this->id = (string) $id;

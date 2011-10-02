@@ -11,10 +11,9 @@ class JavascriptMap extends AbstractMap
     const TYPE_HYBRID = 'HYBRID';
     const TYPE_TERRAIN = 'TERRAIN';
 
-    protected $sensor = false;
+    protected $center = false;
     protected $type = self::TYPE_ROADMAP;
-    protected $zoom = 1;
-    protected $center = null;
+    protected $fitToMarkers = false;
 
     static protected $typeChoices = array(
         self::TYPE_ROADMAP => 'Road Map',
@@ -23,15 +22,10 @@ class JavascriptMap extends AbstractMap
         self::TYPE_TERRAIN => 'Terrain',
     );
 
-    public function setSensor($sensor)
-    {
-        $this->sensor = (bool) $sensor;
-    }
+    protected $templating;
+    protected $clickCallback = null;
 
-    public function getSensor()
-    {
-        return $this->sensor;
-    }
+
 
     public function setType($type)
     {
@@ -52,19 +46,20 @@ class JavascriptMap extends AbstractMap
         return $this->type;
     }
 
-    public function setZoom($zoom)
-    {
-        $this->zoom = $zoom;
-    }
-
-    public function getZoom()
-    {
-        return $this->zoom;
-    }
-
     public function setCenter($marker)
     {
         $this->center = $marker;
+        $this->fitToMarkers = false;
+    }
+
+    public function getFitToMarkers()
+    {
+        return $this->fitToMarkers;
+    }
+
+    public function setFitToMarkers($value)
+    {
+        $this->fitToMarkers = (bool) $value;
     }
 
     public function getCenter()
@@ -81,115 +76,52 @@ class JavascriptMap extends AbstractMap
         return false;
     }
 
-    protected function getMarkersJavascript()
+    public function setTemplating($templating)
     {
-        $markers = array();
-        if ($this->hasMarkers())
-        {
-            foreach ($this->getMarkers() as $marker) 
-            {
-                $markers[] = sprintf('new google.maps.LatLng(%s, %s)', 
-                    $marker->getLatitude(), 
-                    $marker->getLongitude());
-            }
-        }
-        return implode($markers, ',');
+        $this->templating = $templating;
     }
 
-    public function getOptionsJavascript() 
+    public function renderContainer()
     {
-        $center = $this->getCenter();
-        $latitude = 0;
-        $longitude = 0;
-
-        if ($center)
-        {
-            $latitude = $center->getLatitude();
-            $longitude = $center->getLongitude();
-        }
-        return sprintf('zoom: %s, center: new google.maps.LatLng(%s,%s), MapTypeId: google.maps.MapTypeId.%s', 
-            $this->getZoom(),
-            $latitude,
-            $longitude,
-            $this->getType()
-        );
+        return $this->templating->render('GoogleBundle:Maps:container.html.twig', array(
+            'id' => $this->getId(),
+        ));
     }
 
-    public function getMarkersInfowindowJavascript()
+    public function renderJavascript()
     {
-        $content = array();
-        $listeners = '';
-        if ($this->hasMarkers())
-        {
-            $index = 0;
-            foreach ($this->getMarkers() as $marker)
-            {
-                $meta = $marker->getMeta();
-                if (isset($meta['infowindow']))
-                {
-                    $content[] = sprintf('new google.maps.InfoWindow({ content: "%s" }) ', $meta['infowindow']);
-                    $listeners .= sprintf('google.maps.event.addListener(markers[%s], "click", function() { if (currentWindow) currentWindow.close(); infowindows[%s].open(map,markers[%s]); currentWindow = infowindows[%s]; }); '."\n", $index, $index, $index, $index);
-                }
-                $index++;
-            }
-        }
-        $infowindows = sprintf('var infowindows = [%s]; ', implode($content, ','));
-        //echo "\n\n\n\n\n\n\n\n\n\n\n\n".$infowindows; die;
-        return $infowindows ."\n" . $listeners;
+        return $this->templating->render('GoogleBundle:Maps:javascript.js.twig', array(
+            'map' => $this,
+            'latitude' => $this->center ? $this->center->getLatitude() : 0,
+            'longitude' => $this->center ? $this->center->getLongitude() : 0,
+            'zoom' => $this->zoom,
+            'type' => $this->type,
+            'map_id' => $this->getId(),
+            'callback' => $this->clickCallback,
+        ));
+    }
+    
+    public function setClickCallback($callback)
+    {
+        $this->clickCallback = $callback;
     }
 
     public function render()
     {
+        //Initialize GoogleMaps scripts
         $request = static::API_ENDPOINT;
         $request .= $this->getSensor() ? 'sensor=true&' : 'sensor=false&';
         $request = rtrim($request, "& ");
-
         $content = sprintf('<script type="text/javascript" src="%s"></script>', $request);
-        $content .= sprintf('<div id="%s"></div>', $this->getId());
+
+        //Get HTML container 
+        $content .= $this->renderContainer();
+
+        //Get required Javascript 
         $content .= '<script type="text/javascript">';
-        $content .= sprintf('var markers = [%s]; ', $this->getMarkersJavascript());
-        $content .= sprintf('var positions = [%s]; ', $this->getMarkersJavascript());
-        $content .= sprintf('var options = { %s }; ', $this->getOptionsJavascript());
-        $content .= sprintf('var map = new google.maps.Map(document.getElementById("%s"), options); ', $this->getId());
-        $content .= 'for (index in markers) { ';
-        $content .= 'markers[index] = new google.maps.Marker({ position: markers[index], map: map, title: "x"});';
-        $content .= "} \n";
-        $content .= 'var currentWindow; ';
-        $content .= $this->getMarkersInfowindowJavascript();
-        $content .= ' var bounds = new google.maps.LatLngBounds(); ';
-        $content .= " for (var i = 0, LtLgLen = markers.length; i < LtLgLen; i++) {  \n";
-        $content .= " bounds.extend(positions[i]); \n";
-        $content .= " }; map.fitBounds(bounds); \n";
-        $content .= '
-var markerx;
-            google.maps.event.addListener(map, "click", function(event) {
-                console.log("Location: "+event.latLng);
-
-                if (markerx) {
-                    markerx.setMap(null);
-                    markerx = null;
-                }
-                markerx = createMarker(event.latLng, "name", "<b>Location</b><br>"+event.latLng);
-
-            });
-
-function createMarker(latlng, name, html) {
-    var contentString = html;
-    var marker = new google.maps.Marker({
-        position: latlng,
-        map: map,
-        zIndex: Math.round(latlng.lat()*-100000)<<5
-        });
-
-    google.maps.event.addListener(marker, "click", function() {
-        //infowindow.setContent(contentString); 
-        //infowindow.open(map,marker);
-        });
-    google.maps.event.trigger(marker, "click");    
-    return marker;
-}';
-
+        $content .= $this->renderJavascript();
         $content .= '</script>';
+
         return $content;
     }
 

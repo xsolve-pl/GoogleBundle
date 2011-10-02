@@ -1,0 +1,93 @@
+{% spaceless %}
+    var currentWindow;
+    var options;
+    var map;
+    var coordinates;
+    var marker;
+    var infowindows;
+    var bounds;
+    var clickMarker;
+    var clickCallback;
+
+
+    options = {
+        zoom: {{ zoom }}, 
+        center: new google.maps.LatLng( {{ latitude }}, {{ longitude }} ), 
+        MapTypeId: google.maps.MapTypeId.{{ type }}
+    }
+
+    map = new google.maps.Map(document.getElementById("{{ map_id }}"), options);
+
+    {% if map.hasMarkers %}
+        {# Markers coordinates #}
+        coordinates = [
+        {% for marker in map.getMarkers %}
+            new google.maps.LatLng( {{ marker.getLatitude }}, {{ marker.getLongitude }} )
+            {% if not loop.last %}
+                ,
+            {% endif %}
+        {% endfor %}
+        ];
+
+        {# Markers objects #}
+        markers = [
+        {% for marker in map.getMarkers %}
+            new google.maps.Marker({ 
+                position: new google.maps.LatLng( {{ marker.getLatitude }}, {{ marker.getLongitude }} ),
+                map: map,
+                title: ''
+            })
+            {% if not loop.last %}
+                ,
+            {% endif %}
+        {% endfor %}
+        ];
+
+        {# Infowindows #}
+        infowindows = [
+        {% for marker in map.getMarkers %}
+            new google.maps.InfoWindow({ content: "{{ marker.getMeta.infowindow | raw }}" })
+            {% if not loop.last %}
+                ,
+            {% endif %}
+        {% endfor %}
+        ];
+
+        {# Event listeners for infowindows #}
+        {% for key in map.getMarkers|keys %}
+            google.maps.event.addListener(markers[{{ key }}], "click", function () {
+                    if (currentWindow) {
+                        currentWindow.close();
+                    }
+                    infowindows[{{ key }}].open(map, markers[{{ key }}]);
+                    currentWindow = infowindows[{{ key }}];
+            });
+        {% endfor %}
+
+        {# fit to markers #}
+        bounds = new google.maps.LatLngBounds();
+        for (index in coordinates) {
+            bounds.extend(coordinates[index]);
+        }
+        map.fitBounds(bounds);
+    {% endif %}
+
+    {# Clickable #}
+    {% if callback is not empty %}
+        clickMarker;
+        clickCallback = {{ callback }};
+        google.maps.event.addListener(map, "click", function(event) {  
+            if (clickMarker) {
+                clickMarker.setMap(null);
+                clickMarker = null;
+            }
+            clickCallback(event.latLng);
+            clickMarker = new google.maps.Marker({
+                position: event.latLng,
+                map: map,
+                zIndex: Math.round(event.latLng.lat()*-100000)<<5
+            });
+        });
+    {% endif %}
+{% endspaceless %}
+
