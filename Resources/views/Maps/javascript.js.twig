@@ -1,26 +1,30 @@
 {% spaceless %}
-    var currentWindow;
-    var options;
-    var map;
-    var coordinates;
-    var marker;
-    var infowindows;
-    var bounds;
-    var clickMarker;
-    var clickCallback;
+    var maps = maps || {};
+
+    maps["{{ map_id }}"] = { 
+        currentWindow: null,
+        options: null,
+        map: null,
+        coordinates: null,
+        markers: null,
+        infowindows: null,
+        bounds: null,
+        clickMarker: null,
+        clickCallback: null
+    };
 
 
-    options = {
+    maps["{{ map_id }}"].options = {
         zoom: {{ zoom }}, 
         center: new google.maps.LatLng( {{ latitude }}, {{ longitude }} ), 
         MapTypeId: google.maps.MapTypeId.{{ type }}
     }
 
-    map = new google.maps.Map(document.getElementById("{{ map_id }}"), options);
-
+    maps["{{ map_id }}"].map = new google.maps.Map(document.getElementById("{{ map_id }}"), maps["{{ map_id }}"].options);
+    
     {% if map.hasMarkers %}
         {# Markers coordinates #}
-        coordinates = [
+        maps["{{ map_id }}"].coordinates = [
         {% for marker in map.getMarkers %}
             new google.maps.LatLng( {{ marker.getLatitude }}, {{ marker.getLongitude }} )
             {% if not loop.last %}
@@ -30,11 +34,11 @@
         ];
 
         {# Markers objects #}
-        markers = [
+        maps["{{ map_id }}"].markers = [
         {% for marker in map.getMarkers %}
             new google.maps.Marker({ 
                 position: new google.maps.LatLng( {{ marker.getLatitude }}, {{ marker.getLongitude }} ),
-                map: map,
+                map: maps["{{ map_id }}"].map,
                 title: ''
             })
             {% if not loop.last %}
@@ -44,7 +48,7 @@
         ];
 
         {# Infowindows #}
-        infowindows = [
+        maps["{{ map_id }}"].infowindows = [
         {% for marker in map.getMarkers %}
             new google.maps.InfoWindow({ content: "{{ marker.getMeta.infowindow | raw }}" })
             {% if not loop.last %}
@@ -55,36 +59,36 @@
 
         {# Event listeners for infowindows #}
         {% for key in map.getMarkers|keys %}
-            google.maps.event.addListener(markers[{{ key }}], "click", function () {
-                    if (currentWindow) {
-                        currentWindow.close();
+            google.maps.event.addListener(maps["{{ map_id }}"].markers[{{ key }}], "click", function () {
+                    if (maps["{{ map_id }}"].currentWindow) {
+                        maps["{{ map_id }}"].currentWindow.close();
                     }
-                    infowindows[{{ key }}].open(map, markers[{{ key }}]);
-                    currentWindow = infowindows[{{ key }}];
+                    maps["{{ map_id }}"].infowindows[{{ key }}].open(maps["{{ map_id }}"].map, maps["{{ map_id }}"].markers[{{ key }}]);
+                    maps["{{ map_id }}"].currentWindow = maps["{{ map_id }}"].infowindows[{{ key }}];
             });
         {% endfor %}
 
         {# fit to markers #}
-        bounds = new google.maps.LatLngBounds();
-        for (index in coordinates) {
-            bounds.extend(coordinates[index]);
+        maps["{{ map_id }}"].bounds = new google.maps.LatLngBounds();
+        for (index in maps["{{ map_id }}"].coordinates) {
+            maps["{{ map_id }}"].bounds.extend(maps["{{ map_id }}"].coordinates[index]);
         }
-        map.fitBounds(bounds);
+        maps["{{ map_id }}"].map.fitBounds(maps["{{ map_id }}"].bounds);
     {% endif %}
-
+    
     {# Clickable #}
     {% if callback is not empty %}
-        clickMarker;
-        clickCallback = {{ callback }};
-        google.maps.event.addListener(map, "click", function(event) {  
-            if (clickMarker) {
-                clickMarker.setMap(null);
-                clickMarker = null;
+        maps["{{ map_id }}"].clickMarker;
+        maps["{{ map_id }}"].clickCallback = {{ callback }};
+        google.maps.event.addListener(maps["{{ map_id }}"].map, "click", function(event) {  
+            if (maps["{{ map_id }}"].clickMarker) {
+                maps["{{ map_id }}"].clickMarker.setMap(null);
+                maps["{{ map_id }}"].clickMarker = null;
             }
-            clickCallback(event.latLng);
-            clickMarker = new google.maps.Marker({
+            maps["{{ map_id }}"].clickCallback(event.latLng);
+            maps["{{ map_id }}"].clickMarker = new google.maps.Marker({
                 position: event.latLng,
-                map: map,
+                map: maps["{{ map_id }}"].map,
                 zIndex: Math.round(event.latLng.lat()*-100000)<<5
             });
         });
