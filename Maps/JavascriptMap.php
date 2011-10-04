@@ -25,8 +25,6 @@ class JavascriptMap extends AbstractMap
     protected $templating;
     protected $clickCallback = null;
 
-
-
     public function setType($type)
     {
         $type = (string) $type;
@@ -106,16 +104,19 @@ class JavascriptMap extends AbstractMap
         $this->clickCallback = $callback;
     }
 
-    public function render()
+    public function getGoogleMapLibrary()
     {
-        //Initialize GoogleMaps scripts
         $request = static::API_ENDPOINT;
         $request .= $this->getSensor() ? 'sensor=true&' : 'sensor=false&';
         $request = rtrim($request, "& ");
         $content = sprintf('<script type="text/javascript" src="%s"></script>', $request);
+        return $content;
+    }
 
+    public function render()
+    {
         //Get HTML container 
-        $content .= $this->renderContainer();
+        $content = $this->renderContainer();
 
         //Get required Javascript 
         $content .= '<script type="text/javascript">';

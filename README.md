@@ -198,3 +198,8 @@ Include the Google Maps in your template like this:
 			{% endautoescape %}
 		{% endfor %}
 	{% endif %}
+
+#### Javascript
+
+To recalculate map center and zoom ("fit to markers") call:
+maps.fitToMarkers("map_id");

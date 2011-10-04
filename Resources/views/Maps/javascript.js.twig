@@ -1,5 +1,14 @@
 {% spaceless %}
-    var maps = maps || {};
+    if ('undefined' === typeof maps) {
+        var maps = {};
+        maps['fitToMarkers'] = function (map_id) {
+            maps[map_id].bounds = new google.maps.LatLngBounds();
+            for (index in maps[map_id].coordinates) {
+                maps[map_id].bounds.extend(maps[map_id].coordinates[index]);
+            }
+            maps[map_id].map.fitBounds(maps[map_id].bounds);
+        }
+    }
 
     maps["{{ map_id }}"] = { 
         currentWindow: null,
@@ -13,15 +22,14 @@
         clickCallback: null
     };
 
-
     maps["{{ map_id }}"].options = {
         zoom: {{ zoom }}, 
         center: new google.maps.LatLng( {{ latitude }}, {{ longitude }} ), 
         MapTypeId: google.maps.MapTypeId.{{ type }}
     }
 
-    maps["{{ map_id }}"].map = new google.maps.Map(document.getElementById("{{ map_id }}"), maps["{{ map_id }}"].options);
-    
+   maps["{{ map_id }}"].map = new google.maps.Map(document.getElementById("{{ map_id }}"), maps["{{ map_id }}"].options); 
+
     {% if map.hasMarkers %}
         {# Markers coordinates #}
         maps["{{ map_id }}"].coordinates = [
@@ -68,12 +76,8 @@
             });
         {% endfor %}
 
-        {# fit to markers #}
-        maps["{{ map_id }}"].bounds = new google.maps.LatLngBounds();
-        for (index in maps["{{ map_id }}"].coordinates) {
-            maps["{{ map_id }}"].bounds.extend(maps["{{ map_id }}"].coordinates[index]);
-        }
-        maps["{{ map_id }}"].map.fitBounds(maps["{{ map_id }}"].bounds);
+        maps.fitToMarkers("{{ map_id }}");
+
     {% endif %}
     
     {# Clickable #}
