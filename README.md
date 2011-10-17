@@ -165,26 +165,30 @@ Include the Google Maps in your template like this:
 
 #### Application config.yml
 
-Enable loading of the Google Maps Static service by adding the following to
-the applications's `config.yml` file (The static service does NOT require an API Key):
+Enable loading of the Google Maps service by adding the following to
+the applications's `config.yml` file 
 
     google:
         maps: ~
 
 #### Controller
 
-    use AntiMattr\GoogleBundle\Maps\StaticMap;
+    use AntiMattr\GoogleBundle\Maps\JavascriptMap as Map;
     use AntiMattr\GoogleBundle\Maps\Marker;
 
     ...
 
-    $map = new StaticMap();
-    $map->setId("Paul");
-    $map->setSize("512x512");
+    $map = new Map();
+    $map->setId("demo-map");
+
     $marker = new Marker();
-    $marker->setLatitude(40.596631);
-    $marker->setLongitude(-73.972359);
+    $marker->setLatitude(50.294492);
+    $marker->setLongitude(18.67138);
+    $marker->setMeta(array(
+        'infowindow' => "<div>Marker info window text goes here</div>"
+    ));
     $map->addMarker($marker);
+
     $this->container->get('google.maps')->addMap($map);
 
 #### View
@@ -201,5 +205,3 @@ Include the Google Maps in your template like this:
 
 #### Javascript
 
-To recalculate map center and zoom ("fit to markers") call:
-maps.fitToMarkers("map_id");
