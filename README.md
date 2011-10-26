@@ -175,10 +175,10 @@ the applications's `config.yml` file
 
 Add Javascript library:
 
-{% javascripts '@GoogleBundle/Resources/public/js/*'
-%}
-    <script type="text/javascript" src="{{ asset_url }}"></script>
-{% endjavascripts %}
+    {% javascripts '@GoogleBundle/Resources/public/js/*'
+    %}
+        <script type="text/javascript" src="{{ asset_url }}"></script>
+    {% endjavascripts %}
 
 
 #### Controller
