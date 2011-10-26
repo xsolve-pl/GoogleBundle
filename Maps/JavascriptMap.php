@@ -197,8 +197,7 @@ class JavascriptMap extends AbstractMap
         $request = static::API_ENDPOINT;
         $request .= $this->getSensor() ? 'sensor=true&' : 'sensor=false&';
         $request = rtrim($request, "& ");
-        $content = sprintf('<script type="text/javascript" src="%s"></script>', $request);
-        return $content;
+        return $request;
     }
 
     /**

@@ -7,8 +7,12 @@ use Doctrine\Common\Collections\Collection;
 
 class MapsManager
 {
+    const MAP_JAVASCRIPT = 'map_javascript';
+    const MAP_STATIC = 'map_static';
+
     private $config = array();
     private $maps = array();
+    private $templating;
 
     public function __construct(array $config = array())
     {
@@ -79,5 +83,45 @@ class MapsManager
                 return $map;
             }
         }
+    }
+
+    /**
+     * setTemplating 
+     * 
+     * @param \Symfony\Bundle\TwigBundle\TwigEngine $templating 
+     * @return void
+     */
+    public function setTemplating(\Symfony\Bundle\TwigBundle\TwigEngine $templating)
+    {
+        $this->templating = $templating;
+    }
+
+    /**
+     * create Google Map instance 
+     * available options:
+     *   - MapsManager::MAP_JAVASCRIPT
+     *   - MapsManager::MAP_STATIC
+     * 
+     * @param mixed $type 
+     * @return AbstractMap instance
+     */
+    public function create($type, $id) {
+        switch ($type)
+        {
+            case self::MAP_JAVASCRIPT:
+                $map = new Maps\JavascriptMap();
+                $map->setTemplating($this->templating);
+                $map->setId($id);
+                break;
+
+            case self::MAP_STATIC;
+                $map = new Maps\StaticMap();
+                $map->setId($id);
+                break;
+
+            default:
+                throw \InvalidArgumentException(sprintf('Google Map\'s type: %s is not supported', $type));
+        }
+        return $map;
     }
 }

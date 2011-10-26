@@ -171,37 +171,54 @@ the applications's `config.yml` file
     google:
         maps: ~
 
+#### Layout base.html.twig
+
+Add Javascript library:
+
+{% javascripts '@GoogleBundle/Resources/public/js/*'
+%}
+    <script type="text/javascript" src="{{ asset_url }}"></script>
+{% endjavascripts %}
+
+
 #### Controller
 
-    use AntiMattr\GoogleBundle\Maps\JavascriptMap as Map;
     use AntiMattr\GoogleBundle\Maps\Marker;
+    use AntiMattr\GoogleBundle\MapsManager;
 
     ...
 
-    $map = new Map();
-    $map->setId("demo-map");
+    $map = $this->get('google.maps')->create(MapsManager::MAP_JAVASCRIPT, 'demo-map');
 
+    /**
+     * Add marker
+     */
     $marker = new Marker();
     $marker->setLatitude(50.294492);
     $marker->setLongitude(18.67138);
     $marker->setMeta(array(
-        'infowindow' => "<div>Marker info window text goes here</div>"
+        'infowindow' => "<div>Marker 1</div>"
     ));
     $map->addMarker($marker);
 
-    $this->container->get('google.maps')->addMap($map);
+    // Fit map to markers
+    $map->setFitToMarkers(true);
 
+    $this->get('google.maps')->addMap($map);
+    
 #### View
 
 Include the Google Maps in your template like this:
 
     {% if google_maps.hasMaps() %}
-		{% for map in google_maps.getMaps() %}
-			{% autoescape false %}
-				{{ map.render }}
-			{% endautoescape %}
-		{% endfor %}
-	{% endif %}
+        {% for map in google_maps.getMaps() %}
+            {% if loop.first %}
+                {# Render GoogleMap link only once #}
+                <script type="text/javascript" src="{{ map.getGoogleMapLibrary }}"></script>
+            {% endif %}
 
-#### Javascript
-
+            {% autoescape false %}
+                {{ map.render }}
+            {% endautoescape %}
+        {% endfor %}
+    {% endif %}
