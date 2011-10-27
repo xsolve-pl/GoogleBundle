@@ -9,9 +9,6 @@
 	<services>
 		<service id="google.maps" class="AntiMattr\GoogleBundle\MapsManager" >
             <argument>%google.maps.config%</argument>
-            <call method="setTemplating">
-                <argument type="service" id="templating" />
-            </call>
 		</service>
 
 		<service id="templating.helper.google_maps" class="AntiMattr\GoogleBundle\Helper\MapsHelper">

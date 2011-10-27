@@ -36,9 +36,6 @@ class JavascriptMap extends AbstractMap
         self::TYPE_TERRAIN => 'Terrain',
     );
 
-    // Templating service
-    protected $templating;
-
     // Javascript click callback for map
     protected $clickCallback = null;
 
@@ -136,26 +133,13 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * setTemplating Set twig templating service
-     * 
-     * @param mixed $templating 
-     * @return void
-     */
-    public function setTemplating(\Symfony\Bundle\TwigBundle\TwigEngine $templating)
-    {
-        $this->templating = $templating;
-    }
-
-    /**
      * renderContainer Render HTML container
      * 
      * @return string
      */
     public function renderContainer()
     {
-        return $this->templating->render('GoogleBundle:Maps:container.html.twig', array(
-            'id' => $this->getId(),
-        ));
+        return sprintf('<div id="%s"></div>', $this->getId());
     }
 
     /**
@@ -165,15 +149,35 @@ class JavascriptMap extends AbstractMap
      */
     public function renderJavascript()
     {
-        return $this->templating->render('GoogleBundle:Maps:javascript.js.twig', array(
-            'map' => $this,
-            'latitude' => $this->center ? $this->center->getLatitude() : 0,
-            'longitude' => $this->center ? $this->center->getLongitude() : 0,
-            'zoom' => $this->zoom,
-            'type' => $this->type,
-            'map_id' => $this->getId(),
-            'callback' => $this->clickCallback,
-        ));
+        $latitude = $this->center ? $this->center->getLatitude() : 0;
+        $longitude = $this->center ? $this->center->getLongitude() : 0;
+        //Initialize
+        $content = sprintf('GoogleBundle.Map("%s").initialize({ zoom: %d, center: new google.maps.LatLng( %F, %F ), MapTypeId: google.maps.MapTypeId.%s }); ',
+            $this->id, $this->zoom, $latitude, $longitude, $this->type);
+
+        //Add markers
+        if ($this->hasMarkers())
+        {
+            foreach ($this->getMarkers() as $marker)
+            {
+                $meta = $marker->getMeta();
+                $infowindow = isset($meta['infowindow']) ? $meta['infowindow'] : '';
+
+                $content .= sprintf('GoogleBundle.Map("%s").addMarker(%F, %F, "%s"); ',
+                    $this->id, $marker->getLatitude(), $marker->getLongitude(), $infowindow);
+            }
+        }
+
+        if ($this->fitToMarkers)
+        {
+            $content .= sprintf('GoogleBundle.Map("%s").fitToMarkers(); ', $this->id);
+        }
+
+        if (!empty($this->clickCallback))
+        {
+            $content .= sprintf('GoogleBundle.Map("%s").click(%s); ', $this->id, $this->clickCallback);
+        }
+        return $content;
     }
     
     /**

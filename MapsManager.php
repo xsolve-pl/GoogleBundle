@@ -86,17 +86,6 @@ class MapsManager
     }
 
     /**
-     * setTemplating 
-     * 
-     * @param \Symfony\Bundle\TwigBundle\TwigEngine $templating 
-     * @return void
-     */
-    public function setTemplating(\Symfony\Bundle\TwigBundle\TwigEngine $templating)
-    {
-        $this->templating = $templating;
-    }
-
-    /**
      * create Google Map instance 
      * available options:
      *   - MapsManager::MAP_JAVASCRIPT
@@ -110,7 +99,6 @@ class MapsManager
         {
             case self::MAP_JAVASCRIPT:
                 $map = new Maps\JavascriptMap();
-                $map->setTemplating($this->templating);
                 $map->setId($id);
                 break;
 
