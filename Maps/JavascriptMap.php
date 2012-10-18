@@ -3,77 +3,94 @@
 namespace AntiMattr\GoogleBundle\Maps;
 use AntiMattr\GoogleBundle\Maps\Marker;
 /**
- * JavascriptMap 
- * 
+ * JavascriptMap
+ *
  * @uses AbstractMap
  * @package GoogleBundle
- * @author Marcin Dryka <marcin@dryka.pl> 
+ * @author Marcin Dryka <marcin@dryka.pl>
  */
 class JavascriptMap extends AbstractMap
 {
-    const API_ENDPOINT = 'http://maps.googleapis.com/maps/api/js?'; //Google API endpoint
+    const API_ENDPOINT = 'http://maps.googleapis.com/maps/api/js?';
 
-    // Google Maps supported types:
-    const TYPE_ROADMAP = 'ROADMAP';     
+    const TYPE_ROADMAP = 'ROADMAP';
     const TYPE_SATELLITE = 'SATELLITE';
     const TYPE_HYBRID = 'HYBRID';
     const TYPE_TERRAIN = 'TERRAIN';
 
-    // Google Map Center
-    protected $center = false;
+    /**
+     * @var \AntiMattr\GoogleBundle\Maps\Marker $center
+     */
+    protected $center;
 
-    // Default map type
+    /**
+     * @var string $type
+     */
     protected $type = self::TYPE_ROADMAP;
 
-    // Default do not fit to markers
+    /**
+     * @var boolean $sensor
+     */
+    protected $sensor = false;
+
+    /**
+     * @var integer $zoom
+     */
+    protected $zoom = 1;
+
+    /**
+     * @var boolean $fitToMarkers
+     */
     protected $fitToMarkers = false;
 
-    // Google Maps types array
-    static protected $typeChoices = array(
-        self::TYPE_ROADMAP => 'Road Map',
+    protected static $typeChoices = array(
+        self::TYPE_ROADMAP => 'Road map',
         self::TYPE_SATELLITE => 'Satellite',
         self::TYPE_HYBRID => 'Hybrid',
         self::TYPE_TERRAIN => 'Terrain',
     );
 
-    // Javascript click callback for map
-    protected $clickCallback = null;
+    /**
+     * @var string $clickCallback
+     */
+    protected $clickCallback;
 
     /**
-     * setType Set Google Map type 
-     * available options:
-     *   - JavascriptMap::TYPE_ROADMAP
-     *   - JavascriptMap::TYPE_SATELLITE
-     *   - JavascriptMap::TYPE_HYBRID
-     *   - JavascriptMap::TYPE_TERRAIN
-     * 
-     * @param string $type 
+     * Set map type
+     *
+     * Available types:
+     *     - JavascriptMap::TYPE_ROADMAP
+     *     - JavascriptMap::TYPE_SATELLITE
+     *     - JavascriptMap::TYPE_HYBRID
+     *     - JavascriptMap::TYPE_TERRAIN
+     *
+     * @param  string $type
      * @return void
      */
     public function setType($type)
     {
         $type = (string) $type;
         if (false === $this->isTypeValid($type)) {
-            throw new \InvalidArgumentException($type.' is not a valid Javascript Map Type.');
+            throw new \InvalidArgumentException(sprintf("'%ss' is not a valid Javascript map type.", $type));
         }
         $this->type = $type;
     }
 
     /**
-     * isTypeValid Validate Google Map type
-     * 
-     * @param mixed $type 
+     * Validate map type
+     *
+     * @param mixed $type
      * @static
      * @return bool
      */
-    static public function isTypeValid($type)
+    public static function isTypeValid($type)
     {
         return array_key_exists($type, static::$typeChoices);
     }
 
     /**
-     * getType get Google Map type
-     * 
+     * Get map type
+     *
      * @return string
      */
     public function getType()
@@ -82,9 +99,9 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * setCenter Set map center
-     * 
-     * @param mixed $marker 
+     * Set map center
+     *
+     * @param  mixed $marker
      * @return void
      */
     public function setCenter(Marker $marker)
@@ -93,28 +110,64 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * getCenter Get map center
-     * 
-     * @return void
+     * Get map center
+     *
+     * @return mixed
      */
     public function getCenter()
     {
-        if (null !== $this->center)
-        {
+        if ($this->center) {
             return $this->center;
         }
-        elseif ($this->hasMarkers())
-        {
-            $markers = $this->getMarkers();
-            return array_shift($markers);
+        if ($this->hasMarkers()) {
+            return array_shift($this->getMarkers());
         }
-        return false;
     }
 
     /**
-     * setFitToMarkers If set to true, Google Map is fit to markers (also calculate zoom)
-     * 
-     * @param bool $value 
+     * Set sensor
+     *
+     * @param boolean $sensor
+     */
+    public function setSensor($sensor)
+    {
+        $this->sensor = (bool) $sensor;
+    }
+
+    /**
+     * Get sensor
+     *
+     * @return boolean
+     */
+    public function getSensor()
+    {
+        return $this->sensor;
+    }
+
+    /**
+     * Set zoom
+     *
+     * @param integer $zoom
+     */
+    public function setZoom($zoom)
+    {
+        $this->zoom = (int) $zoom;
+    }
+
+    /**
+     * Get zoom
+     *
+     * @return integer
+     */
+    public function getZoom()
+    {
+        return $this->zoom;
+    }
+
+    /**
+     * Set fit to markers setting (both center and zoom)
+     *
+     * @param  bool $value
      * @return void
      */
     public function setFitToMarkers($value)
@@ -123,8 +176,8 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * getFitToMarkers Get fitToMarkers setting value
-     * 
+     * Get fit to markers setting
+     *
      * @return bool
      */
     public function getFitToMarkers()
@@ -133,8 +186,8 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * renderContainer Render HTML container
-     * 
+     * Render HTML container
+     *
      * @return string
      */
     public function renderContainer()
@@ -143,47 +196,48 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * renderJavascript Render Javascripts settings
-     * 
+     * Render Javascripts settings
+     *
      * @return string
      */
     public function renderJavascript()
     {
         $latitude = $this->center ? $this->center->getLatitude() : 0;
         $longitude = $this->center ? $this->center->getLongitude() : 0;
+
         //Initialize
-        $content = sprintf('GoogleBundle.Map("%s").initialize({ zoom: %d, center: new google.maps.LatLng( %F, %F ), MapTypeId: google.maps.MapTypeId.%s }); ',
-            $this->id, $this->zoom, $latitude, $longitude, $this->type);
+        $content = sprintf(
+            'GoogleBundle.Map("%s").initialize({ zoom: %d, center: new google.maps.LatLng( %F, %F ), MapTypeId: google.maps.MapTypeId.%s }); ',
+            $this->id, $this->zoom, $latitude, $longitude, $this->type
+        );
 
         //Add markers
-        if ($this->hasMarkers())
-        {
-            foreach ($this->getMarkers() as $marker)
-            {
+        if ($this->hasMarkers()) {
+            foreach ($this->getMarkers() as $marker) {
                 $meta = $marker->getMeta();
                 $infowindow = isset($meta['infowindow']) ? $meta['infowindow'] : '';
-
-                $content .= sprintf('GoogleBundle.Map("%s").addMarker(%F, %F, "%s"); ',
-                    $this->id, $marker->getLatitude(), $marker->getLongitude(), $infowindow);
+                $content .= sprintf(
+                    'GoogleBundle.Map("%s").addMarker(%F, %F, "%s"); ',
+                    $this->id, $marker->getLatitude(), $marker->getLongitude(), $infowindow
+                );
             }
         }
 
-        if ($this->fitToMarkers)
-        {
+        if ($this->fitToMarkers) {
             $content .= sprintf('GoogleBundle.Map("%s").fitToMarkers(); ', $this->id);
         }
 
-        if (!empty($this->clickCallback))
-        {
+        if (!empty($this->clickCallback)) {
             $content .= sprintf('GoogleBundle.Map("%s").click(%s); ', $this->id, $this->clickCallback);
         }
+
         return $content;
     }
-    
+
     /**
-     * setClickCallback Set Javascript click callback (Javascript function)
-     * 
-     * @param string $callback Javascript function with one argument (coordinates). 
+     * Set Javascript click callback
+     *
+     * @param  string $callback Javascript function with one argument (coordinates).
      * @return void
      */
     public function setClickCallback($callback)
@@ -192,32 +246,27 @@ class JavascriptMap extends AbstractMap
     }
 
     /**
-     * getGoogleMapLibrary Get HTML script tag with google map api library
-     * 
+     * Get HTML script tag with GoogleMaps API library.
+     *
      * @return string
      */
     public function getGoogleMapLibrary()
     {
-        $request = static::API_ENDPOINT;
-        $request .= $this->getSensor() ? 'sensor=true&' : 'sensor=false&';
+        $request = static::API_ENDPOINT . ($this->getSensor() ? 'sensor=true&' : 'sensor=false&');
         $request = rtrim($request, "& ");
+
         return $request;
     }
 
     /**
-     * render Google Map container and settings
-     * 
+     * Render map and settings
+     *
      * @return string
      */
     public function render()
     {
-        //Get HTML container 
         $content = $this->renderContainer();
-
-        //Get required Javascript 
-        $content .= '<script type="text/javascript">';
-        $content .= $this->renderJavascript();
-        $content .= '</script>';
+        $content .= '<script type="text/javascript">' . $this->renderJavascript() . '</script>';
 
         return $content;
     }

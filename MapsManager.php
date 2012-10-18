@@ -7,12 +7,8 @@ use Doctrine\Common\Collections\Collection;
 
 class MapsManager
 {
-    const MAP_JAVASCRIPT = 'map_javascript';
-    const MAP_STATIC = 'map_static';
-
     private $config = array();
     private $maps = array();
-    private $templating;
 
     public function __construct(array $config = array())
     {
@@ -36,6 +32,7 @@ class MapsManager
         if (!empty($this->maps)) {
             return true;
         }
+
         return false;
     }
 
@@ -62,6 +59,7 @@ class MapsManager
             return $this->maps->removeElement($map);
         } else {
             unset($this->maps[array_search($map, $this->maps, true)]);
+
             return $map;
         }
     }
@@ -83,33 +81,5 @@ class MapsManager
                 return $map;
             }
         }
-    }
-
-    /**
-     * create Google Map instance 
-     * available options:
-     *   - MapsManager::MAP_JAVASCRIPT
-     *   - MapsManager::MAP_STATIC
-     * 
-     * @param mixed $type 
-     * @return AbstractMap instance
-     */
-    public function create($type, $id) {
-        switch ($type)
-        {
-            case self::MAP_JAVASCRIPT:
-                $map = new Maps\JavascriptMap();
-                $map->setId($id);
-                break;
-
-            case self::MAP_STATIC;
-                $map = new Maps\StaticMap();
-                $map->setId($id);
-                break;
-
-            default:
-                throw \InvalidArgumentException(sprintf('Google Map\'s type: %s is not supported', $type));
-        }
-        return $map;
     }
 }

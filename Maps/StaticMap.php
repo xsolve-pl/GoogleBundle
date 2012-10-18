@@ -11,16 +11,16 @@ class StaticMap extends AbstractMap
     protected $width;
     protected $sensor = false;
 
-    static protected $typeChoices = array(
+    protected static $typeChoices = array(
         self::TYPE_ROADMAP => 'Road Map',
     );
 
-    static public function getTypeChoices()
+    public static function getTypeChoices()
     {
         return self::$typeChoices;
     }
 
-    static public function isTypeValid($type)
+    public static function isTypeValid($type)
     {
         return array_key_exists($type, static::$typeChoices);
     }
@@ -144,10 +144,11 @@ class StaticMap extends AbstractMap
                 if ($longitude = $marker->getLongitude()) {
                     $request .= ','.$longitude;
                 }
-            }	
+            }
         }
         $request = rtrim($request, "& ");
         $out = '<img id="'.$this->getId().'" src="'.$request.'" />';
+
         return $out;
     }
 }
