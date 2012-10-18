@@ -183,12 +183,14 @@ Add Javascript library:
 
 #### Controller
 
+    use AntiMattr\GoogleBundle\Maps\JavascriptMap;
     use AntiMattr\GoogleBundle\Maps\Marker;
     use AntiMattr\GoogleBundle\MapsManager;
 
     ...
 
-    $map = $this->get('google.maps')->create(MapsManager::MAP_JAVASCRIPT, 'demo-map');
+    $map = new JavascriptMap();
+    $map->setId('demo-map');
 
     /**
      * Add marker
@@ -214,7 +216,7 @@ Include the Google Maps in your template like this:
         {% for map in google_maps.getMaps() %}
             {% if loop.first %}
                 {# Render GoogleMap link only once #}
-                <script type="text/javascript" src="{{ map.getGoogleMapLibrary }}"></script>
+                <script type="text/javascript" src="{{ map.googleMapLibrary }}"></script>
             {% endif %}
 
             {% autoescape false %}
