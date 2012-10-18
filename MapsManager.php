@@ -32,6 +32,7 @@ class MapsManager
         if (!empty($this->maps)) {
             return true;
         }
+
         return false;
     }
 
@@ -58,6 +59,7 @@ class MapsManager
             return $this->maps->removeElement($map);
         } else {
             unset($this->maps[array_search($map, $this->maps, true)]);
+
             return $map;
         }
     }
