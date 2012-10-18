@@ -1,13 +1,13 @@
 {
-    "name": "antimattr/google-bundle",
-    "description": "The GoogleBundle adds the ability to add various google-related services to your application. These include Google Analytics, Adwords and Static Maps.",
+    "name": "xsolve-pl/google-bundle",
+    "description": "Fork of antimattr/google-bundle and drymek/google-bundle with Javascript Maps added.",
     "keywords": ["google", "analytics", "adwords", "maps"],
     "type": "symfony-bundle",
     "license": "MIT",
     "authors": [
         {
-            "name":     "antimattr",
-            "homepage": "https://github.com/antimattr"
+            "name":     "xsolve-pl",
+            "homepage": "https://github.com/xsolve.pl"
         }
     ],
     "require": {

@@ -8,7 +8,7 @@
 
 	<services>
 		<service id="google.maps" class="AntiMattr\GoogleBundle\MapsManager" >
-			<argument>%google.maps.config%</argument>
+            <argument>%google.maps.config%</argument>
 		</service>
 
 		<service id="templating.helper.google_maps" class="AntiMattr\GoogleBundle\Helper\MapsHelper">
@@ -18,8 +18,8 @@
 
 		<service id="twig.extension.google_maps" class="AntiMattr\GoogleBundle\Extension\MapsExtension">
 			<tag name="twig.extension" />
-			<argument type="service" id="templating.helper.google_maps" />
-		</service>
+            <argument type="service" id="templating.helper.google_maps" />
+        </service>
 	</services>
 
 </container>
