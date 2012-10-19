@@ -606,5 +606,5 @@ gadash.util.getType = function(value) {
     '[object RegExp]': 'regex',
     '[object Object]' : 'object',
   })[classStringName];
-}
+};
 
